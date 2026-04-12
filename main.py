@@ -6,18 +6,17 @@ import flet as ft
 @dataclass
 class ElementMixin:
     nom: str
-    attribut_N: bool
-    attribut_T: bool
+    fonctions: str
 
     def __hash__(self):
         return hash(self.nom)
 
 
 class Element(ElementMixin, Enum):
-    FEU = "Feu", True, True
-    AIR = "Air", True, False
-    TERRE = "Terre", False, True
-    EAU = "Eau", False, False
+    FEU = "Feu", "NT"
+    AIR = "Air", "NF"
+    TERRE = "Terre", "ST"
+    EAU = "Eau", "SF"
 
     @classmethod
     def tous(cls):
@@ -34,17 +33,23 @@ class ElementText(ft.Text):
 
 
 @dataclass
+class Question:
+    fonction: str  # deux lettres pour fonctions opposées
+    question: str
+    choix: (str, str)
+
+
+@dataclass
 class Modele:
-    QUESTION_N = (
-            "Vous percevez les éléments autour de vous plutôt...",
-            "avec vos sens",
-            "avec votre intuition")
+    QUESTION1 = Question("SN",
+                         "Vous percevez les éléments autour de vous plutôt...",
+                         ("avec vos sens", "avec votre intuition"),
+                         )
     QUESTION_T = (
             "Vous prenez des décisions plutôt...",
             "avec votre sentiment",
             "avec votre réflexion")
-    attribut_N: bool | None = None
-    attribut_T: bool | None = None
+    fonctions: str = ""
 
 
 @ft.control
@@ -77,19 +82,24 @@ class Vue(ft.Container):
                     ])
 
     def preparer_question(self, question: tuple[str]):
-        self.question.value = question[0]
-        self.reponse1.content = question[1]
-        self.reponse2.content = question[2]
+        self.question.value = question.question
+        self.reponse1.content = question.choix[0]
+        self.reponse2.content = question.choix[1]
+        self.effet_reponse = question.fonction
 
     def choix1(self, event):
         print("choix 1 was clicked", event)
-        for element in Element.tous():
-            if element.attribut_N and self.elements[element]:
-                self.element_row.controls.remove(self.elements[element])
-                self.elements[element] = None
+        self.exclude(self.effet_reponse[1])
 
     def choix2(self, event):
         print("choix 2 was clicked", event)
+        self.exclude(self.effet_reponse[0])
+
+    def exclude(self, excluded):
+        for element in Element.tous():
+            if excluded in element.fonctions and self.elements[element]:
+                self.element_row.controls.remove(self.elements[element])
+                self.elements[element] = None
 
 
 def main(page: ft.Page):
@@ -97,7 +107,7 @@ def main(page: ft.Page):
     modele = Modele()
     vue = Vue()
     page.add(vue)
-    vue.preparer_question(modele.QUESTION_N)
+    vue.preparer_question(modele.QUESTION1)
     page.update()
 
 
