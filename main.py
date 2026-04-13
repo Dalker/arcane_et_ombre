@@ -1,6 +1,24 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 import flet as ft
+
+
+@dataclass
+class Question:
+    fonction: str  # deux lettres pour fonctions opposées
+    question: str
+    choix: (str, str)
+
+    @classmethod
+    def get_questions(cls):
+        return list(reversed((
+                Question("SN",
+                         "Vous percevez les éléments autour de vous plutôt...",
+                         ("avec vos sens", "avec votre intuition")),
+                Question("FT",
+                         "Vous prenez des décisions plutôt...",
+                         ("avec votre sentiment", "avec votre réflexion")),
+                )))
 
 
 @dataclass
@@ -33,14 +51,7 @@ class ElementText(ft.Text):
 
 
 @dataclass
-class Question:
-    fonction: str  # deux lettres pour fonctions opposées
-    question: str
-    choix: (str, str)
-
-
-@dataclass
-class Modele:
+class ModeleAncien:
     QUESTION1 = Question("SN",
                          "Vous percevez les éléments autour de vous plutôt...",
                          ("avec vos sens", "avec votre intuition"),
@@ -52,8 +63,21 @@ class Modele:
     fonctions: str = ""
 
 
+@dataclass
+class Modele:
+    questions: list[Question] = field(default_factory=Question.get_questions)
+
+    def get_question(self) -> Question:
+        try:
+            question = self.questions.pop()
+        except IndexError:
+            return None
+        return question
+
+
 @ft.control
-class Vue(ft.Container):
+class App(ft.Container):
+    modele: Modele = field(default_factory=Modele)
 
     def init(self):
         self.width = 400
@@ -62,8 +86,11 @@ class Vue(ft.Container):
         self.padding = 20
 
         self.question = ft.Text(color=ft.Colors.WHITE)
-        self.reponse1 = ft.Button(content="", on_click=self.choix1)
-        self.reponse2 = ft.Button(content="", on_click=self.choix2)
+        self.reponses = ft.Row()
+        for n in range(2):
+            self.reponses.controls.append(
+                ft.Button(content="", on_click=lambda _, choix=n:
+                          self.gerer_choix(choix)))
 
         self.element_row = ft.Row()
         self.elements = {}
@@ -74,26 +101,30 @@ class Vue(ft.Container):
 
         self.content = ft.Column(controls=[
                     self.question,
-                    ft.Row(controls=[
-                        self.reponse1,
-                        self.reponse2,
-                        ]),
+                    self.reponses,
                     self.element_row,
                     ])
 
-    def preparer_question(self, question: tuple[str]):
+        self.preparer_question(self.modele.get_question())
+
+    def preparer_question(self, question: Question):
         self.question.value = question.question
-        self.reponse1.content = question.choix[0]
-        self.reponse2.content = question.choix[1]
+        for n in range(2):
+            self.reponses.controls[n].content = question.choix[n]
         self.effet_reponse = question.fonction
 
-    def choix1(self, event):
-        print("choix 1 was clicked", event)
-        self.exclude(self.effet_reponse[1])
+    def finaliser(self):
+        self.question.value = "FINI!"
+        self.reponses.controls = []
 
-    def choix2(self, event):
-        print("choix 2 was clicked", event)
-        self.exclude(self.effet_reponse[0])
+    def gerer_choix(self, choix):
+        print(f"choix {choix} was clicked")
+        self.exclude(self.effet_reponse[1-choix])
+        prochaine_question = self.modele.get_question()
+        if prochaine_question:
+            self.preparer_question(prochaine_question)
+        else:
+            self.finaliser()
 
     def exclude(self, excluded):
         for element in Element.tous():
@@ -104,10 +135,9 @@ class Vue(ft.Container):
 
 def main(page: ft.Page):
     page.title = "Faites votre choix..."
-    modele = Modele()
-    vue = Vue()
+    vue = App()
     page.add(vue)
-    vue.preparer_question(modele.QUESTION1)
+    # vue.preparer_question(modele.QUESTION1)
     page.update()
 
 
