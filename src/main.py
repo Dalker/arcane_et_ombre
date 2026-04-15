@@ -42,7 +42,6 @@ class Archetype:
 
     @classmethod
     def elements(cls):
-        # return cls.FEU, cls.AIR, cls.TERRE, cls.EAU
         return (
             cls("Feu", "NT", Couleur.FEU),
             cls("Air", "NF", Couleur.AIR),
@@ -82,6 +81,7 @@ class App(ft.Container):
 
     def init(self):
         self.width = 400
+        self.alignment = ft.Alignment.CENTER
         self.bgcolor = ft.Colors.BLACK
         self.border_radius = ft.BorderRadius.all(20)
         self.padding = 20
@@ -138,17 +138,18 @@ class App(ft.Container):
         for element in Archetype.elements():
             if excluded in element.fonctions and self.elements[element]:
                 self.elements[element].disable()
-                # self.element_row.controls.remove(self.elements[element])
-                # self.elements[element] = None
 
 
 def main(page: ft.Page):
     page.title = "Faites votre choix..."
+    page.theme_mode = ft.ThemeMode.DARK
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     vue = App()
     page.add(vue)
-    # vue.preparer_question(modele.QUESTION1)
     page.update()
 
 
 if __name__ == "__main__":
+    # ft.app(target=main, assets_dir="assets", view=ft.WEB_BROWSER)
     ft.run(main)
