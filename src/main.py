@@ -25,16 +25,17 @@ class Question:
 class ElementMixin:
     nom: str
     fonctions: str
+    color: ft.Colors = ft.Colors.WHITE
 
     def __hash__(self):
         return hash(self.nom)
 
 
 class Element(ElementMixin, Enum):
-    FEU = "Feu", "NT"
-    AIR = "Air", "NF"
-    TERRE = "Terre", "ST"
-    EAU = "Eau", "SF"
+    FEU = "Feu", "NT", ft.Colors.RED
+    AIR = "Air", "NF", ft.Colors.GREEN
+    TERRE = "Terre", "ST", ft.Colors.BROWN
+    EAU = "Eau", "SF", ft.Colors.BLUE
 
     @classmethod
     def tous(cls):
@@ -46,8 +47,11 @@ class ElementText(ft.Text):
     element: Element | None = None
 
     def init(self):
-        self.color = ft.Colors.WHITE
+        self.color = self.element.color
         self.value = self.element.nom
+
+    def disable(self):
+        self.color = "#333333"
 
 
 @dataclass
@@ -86,20 +90,28 @@ class App(ft.Container):
         self.padding = 20
 
         self.question = ft.Text(color=ft.Colors.WHITE)
-        self.reponses = ft.Row()
+        self.reponses = ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                )
         for n in range(2):
             self.reponses.controls.append(
                 ft.Button(content="", on_click=lambda _, choix=n:
                           self.gerer_choix(choix)))
 
-        self.element_row = ft.Row()
+        self.element_row = ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                tight=True,
+                spacing=20,
+                )
         self.elements = {}
         for element in Element.tous():
             etext = ElementText(element=element)
             self.element_row.controls.append(etext)
             self.elements[element] = etext
 
-        self.content = ft.Column(controls=[
+        self.content = ft.Column(
+                horizontal_alignment=ft.MainAxisAlignment.CENTER,
+                controls=[
                     self.question,
                     self.reponses,
                     self.element_row,
@@ -118,7 +130,6 @@ class App(ft.Container):
         self.reponses.controls = []
 
     def gerer_choix(self, choix):
-        print(f"choix {choix} was clicked")
         self.exclude(self.effet_reponse[1-choix])
         prochaine_question = self.modele.get_question()
         if prochaine_question:
@@ -129,8 +140,9 @@ class App(ft.Container):
     def exclude(self, excluded):
         for element in Element.tous():
             if excluded in element.fonctions and self.elements[element]:
-                self.element_row.controls.remove(self.elements[element])
-                self.elements[element] = None
+                self.elements[element].disable()
+                # self.element_row.controls.remove(self.elements[element])
+                # self.elements[element] = None
 
 
 def main(page: ft.Page):
