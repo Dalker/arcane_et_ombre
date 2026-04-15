@@ -3,8 +3,17 @@ from enum import Enum
 import flet as ft
 
 
+class Couleur(Enum):
+    FEU = ft.Colors.RED
+    AIR = ft.Colors.GREEN
+    TERRE = ft.Colors.BROWN
+    EAU = ft.Colors.BLUE
+
+
 @dataclass
 class Question:
+    """Une question qui déterminera une fonction parmi deux opposées."""
+
     fonction: str  # deux lettres pour fonctions opposées
     question: str
     choix: (str, str)
@@ -22,7 +31,8 @@ class Question:
 
 
 @dataclass
-class ElementMixin:
+class Archetype:
+    """Un type de personalité déterminé par un ou plusieurs archetypes."""
     nom: str
     fonctions: str
     color: ft.Colors = ft.Colors.WHITE
@@ -30,41 +40,28 @@ class ElementMixin:
     def __hash__(self):
         return hash(self.nom)
 
-
-class Element(ElementMixin, Enum):
-    FEU = "Feu", "NT", ft.Colors.RED
-    AIR = "Air", "NF", ft.Colors.GREEN
-    TERRE = "Terre", "ST", ft.Colors.BROWN
-    EAU = "Eau", "SF", ft.Colors.BLUE
-
     @classmethod
-    def tous(cls):
-        return cls.FEU, cls.AIR, cls.TERRE, cls.EAU
+    def elements(cls):
+        # return cls.FEU, cls.AIR, cls.TERRE, cls.EAU
+        return (
+            cls("Feu", "NT", Couleur.FEU),
+            cls("Air", "NF", Couleur.AIR),
+            cls("Terre", "ST", Couleur.TERRE),
+            cls("Eau", "SF", Couleur.EAU),
+            )
 
 
 @ft.control
-class ElementText(ft.Text):
-    element: Element | None = None
+class ArchetypeWidget(ft.Text):
+    """Vue d'un Archetype."""
+    archetype: Archetype | None = None
 
     def init(self):
-        self.color = self.element.color
-        self.value = self.element.nom
+        self.color = self.archetype.color.value
+        self.value = self.archetype.nom
 
     def disable(self):
         self.color = "#333333"
-
-
-@dataclass
-class ModeleAncien:
-    QUESTION1 = Question("SN",
-                         "Vous percevez les éléments autour de vous plutôt...",
-                         ("avec vos sens", "avec votre intuition"),
-                         )
-    QUESTION_T = (
-            "Vous prenez des décisions plutôt...",
-            "avec votre sentiment",
-            "avec votre réflexion")
-    fonctions: str = ""
 
 
 @dataclass
@@ -104,10 +101,10 @@ class App(ft.Container):
                 spacing=20,
                 )
         self.elements = {}
-        for element in Element.tous():
-            etext = ElementText(element=element)
-            self.element_row.controls.append(etext)
-            self.elements[element] = etext
+        for element in Archetype.elements():
+            widget = ArchetypeWidget(archetype=element)
+            self.element_row.controls.append(widget)
+            self.elements[element] = widget
 
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
@@ -138,7 +135,7 @@ class App(ft.Container):
             self.finaliser()
 
     def exclude(self, excluded):
-        for element in Element.tous():
+        for element in Archetype.elements():
             if excluded in element.fonctions and self.elements[element]:
                 self.elements[element].disable()
                 # self.element_row.controls.remove(self.elements[element])
