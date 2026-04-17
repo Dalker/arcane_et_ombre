@@ -106,7 +106,7 @@ class Controle:
         self.vue.update(self.modele.question, self.modele.etat)
 
     def gerer_choix(self, choix: int):
-        self.modele.gerer_choix(choix)
+        self.modele.appliquer_choix(choix)
         self.update()
 
 

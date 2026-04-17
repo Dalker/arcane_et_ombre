@@ -73,27 +73,19 @@ class Etat:
     fonctions: tuple[str] = field(default_factory=tuple)
     n_question: int = 0
 
-    def __add__(self, item: str | int):
-        """Retourner un nouvel état modifié."""
-        if isinstance(item, str):
-            fonctions = set(self.fonctions)
-            if oppose(item) in fonctions:
-                fonctions.remove(oppose(item))
-            fonctions.add(item)
-            return Etat(set(fonctions), self.n_question)
-        elif isinstance(item, int):
-            return Etat(self.fonctions,
-                        (self.n_question + item) % len(QUESTIONS))
-        else:
-            raise ValueError(f"can't add {item} to Etat")
+    def ajouter_trait(self, trait: str) -> Etat:
+        """Retourner un Etat avec une un trait en plus.
 
-    def __sub__(self, item: int):
-        """Retourner un nouvel état modifié."""
-        if isinstance(item, int):
-            return Etat(self.fonctions,
-                        (self.n_question - item) % len(QUESTIONS))
-        else:
-            raise ValueError(f"can't add {item} to Etat")
+        Enlever le trait opposé sil était présent.
+        """
+        fonctions = set(self.fonctions)
+        if oppose(trait) in fonctions:
+            fonctions.remove(oppose(trait))
+        fonctions.add(trait)
+        return Etat(set(fonctions), self.n_question)
+
+    def avancer_question(self) -> Etat:
+        return Etat(self.fonctions, (self.n_question + 1) % len(QUESTIONS))
 
 
 @dataclass
@@ -108,12 +100,10 @@ class Modele:
     def question(self):
         return QUESTIONS[self.etat.n_question]
 
-    def add(self, item: str | int):
-        """Avancer l'état actuel en ajoutant un item (fonction ou n_quest)."""
+    def appliquer_choix(self, choix: int):
+        """Appliquer la réponse à la question actuelle."""
         self.prev.append(self.etat)
         self.next = list()
-        self.etat += item
-        self.etat += 1
-
-    def gerer_choix(self, choix: int):
-        self.add(self.question.fonctions[choix])
+        self.etat = self.etat \
+            .ajouter_trait(self.question.fonctions[choix]) \
+            .avancer_question()
