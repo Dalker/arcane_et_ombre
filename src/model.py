@@ -4,9 +4,9 @@ from dataclasses import dataclass, field
 from typing import NamedTuple
 
 
-def oppose(fonction: str):
-    """Donner la fonction opposée."""
-    match fonction:
+def oppose(trait: str):
+    """Donner la trait opposée."""
+    match trait:
         case "I": return "E"
         case "N": return "S"
         case "T": return "F"
@@ -16,7 +16,7 @@ def oppose(fonction: str):
         case "F": return "T"
         case "J": return "P"
         case _:
-            raise ValueError(f"La fonction {fonction} n'existe pas.")
+            raise ValueError(f"La trait {trait} n'existe pas.")
 
 
 class Element(Enum):
@@ -28,17 +28,10 @@ class Element(Enum):
 
 @dataclass(frozen=True)
 class Archetype:
-    """Un aspect de personalité déterminé par une ou plusieurs fonctions."""
+    """Un aspect de personalité déterminé par une ou plusieurs traits."""
     nom: str
-    fonctions: str
+    traits: str
     element: Element
-
-    def compatible(self, etat: Etat) -> bool:
-        """Vérifier si l'archetype est compatible avec l'état fourni."""
-        for fonction in etat.fonctions:
-            if oppose(fonction) in self.fonctions:
-                return False
-        return True
 
     @classmethod
     def elements(cls):
@@ -51,46 +44,38 @@ class Archetype:
 
 
 class Question(NamedTuple):
-    """Une question qui déterminera une fonction parmi deux opposées."""
-    fonctions: (str, str)
+    """Une question qui déterminera une trait parmi deux opposées."""
+    traits: (str, str)
     question: str
     choix: (str, str)
 
 
 QUESTIONS = (
-    Question(fonctions=tuple("SN"),
+    Question(traits=tuple("SN"),
              question="Vous percevez les éléments autour de vous plutôt...",
              choix=("avec vos sens", "avec votre intuition")),
-    Question(fonctions=("F", "T"),
+    Question(traits=("F", "T"),
              question="Vous prenez des décisions plutôt...",
              choix=("avec votre sentiment", "avec votre réflexion")),
     )
 
 
-@dataclass(frozen=True)
-class Etat:
+class Etat(NamedTuple):
     """État du modèle à un moment donné."""
-    fonctions: tuple[str] = field(default_factory=tuple)
+    traits: tuple[str] = ()
     n_question: int = 0
 
-    def ajouter_trait(self, trait: str) -> Etat:
-        """Retourner un Etat avec une un trait en plus.
-
-        Enlever le trait opposé sil était présent.
-        """
-        fonctions = set(self.fonctions)
-        if oppose(trait) in fonctions:
-            fonctions.remove(oppose(trait))
-        fonctions.add(trait)
-        return Etat(set(fonctions), self.n_question)
-
-    def avancer_question(self) -> Etat:
-        return Etat(self.fonctions, (self.n_question + 1) % len(QUESTIONS))
+    def compatible(self, archetype: Archetype) -> bool:
+        """Vérifier si l'archetype est compatible."""
+        for trait in archetype.traits:
+            if oppose(trait) in self.traits:
+                return False
+        return True
 
 
 @dataclass
 class Modele:
-    """État actuel, passé et présent des fonctions établies."""
+    """État actuel, passé et présent des traits établies."""
     etat: Etat = field(default_factory=Etat)
     prev: list[Etat] = field(default_factory=list)
     next: list[Etat] = field(default_factory=list)
@@ -104,6 +89,13 @@ class Modele:
         """Appliquer la réponse à la question actuelle."""
         self.prev.append(self.etat)
         self.next = list()
+        new_trait = self.question.traits[choix]
+        traits, n_question = self.etat
+        self.etat = Etat(
+                set(traits).union({new_trait}).difference({oppose(new_trait)}),
+                (n_question + 1) % len(QUESTIONS)
+                )
+        return
         self.etat = self.etat \
-            .ajouter_trait(self.question.fonctions[choix]) \
+            .ajouter_trait(self.question.traits[choix]) \
             .avancer_question()

@@ -20,7 +20,7 @@ class ArchetypeWidget(ft.Text):
         self.value = self.archetype.nom
 
     def update(self, etat: Etat):
-        if self.archetype.compatible(etat):
+        if etat.compatible(self.archetype):
             self.color = self.COULEUR[self.archetype.element]
         else:
             self.color = "#333333"
