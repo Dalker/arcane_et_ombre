@@ -1,6 +1,6 @@
 from typing import Callable, Sequence
 import flet as ft
-from model import Modele, Etat, Question, Element, Archetype
+from model import Modele, Etat, Element, Archetype
 
 
 class ArchetypeWidget(ft.Text):
@@ -72,12 +72,12 @@ class Vue(ft.Container):
             self.element_row.controls.append(widget)
         page.update()
 
-    def update(self, question: Question, etat: Etat):
+    def update(self, etat: Etat):
         for element_widget in self.element_row.controls:
             element_widget.update(etat)
-        self.question.value = question.question
+        self.question.value = etat.question
         for n in range(2):
-            self.reponses.controls[n].content = question.choix[n]
+            self.reponses.controls[n].content = etat.choix[n]
         super().update()
 
     def finaliser(self):
@@ -103,7 +103,7 @@ class Controle:
         self.update()
 
     def update(self):
-        self.vue.update(self.modele.question, self.modele.etat)
+        self.vue.update(self.modele.etat)
 
     def gerer_choix(self, choix: int):
         self.modele.appliquer_choix(choix)

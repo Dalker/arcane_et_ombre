@@ -61,9 +61,17 @@ QUESTIONS = (
 
 
 class Etat(NamedTuple):
-    """État du modèle à un moment donné."""
+    """État du modèle à un moment donné, accessible par la Vue."""
     traits: tuple[str] = ()
     n_question: int = 0
+
+    @property
+    def question(self):
+        return QUESTIONS[self.n_question].question
+
+    @property
+    def choix(self):
+        return QUESTIONS[self.n_question].choix
 
     def compatible(self, archetype: Archetype) -> bool:
         """Vérifier si l'archetype est compatible."""
@@ -81,15 +89,11 @@ class Modele:
     next: list[Etat] = field(default_factory=list)
     elements: tuple[Archetype] = field(default_factory=Archetype.elements)
 
-    @property
-    def question(self):
-        return QUESTIONS[self.etat.n_question]
-
-    def appliquer_choix(self, choix: int):
+    def appliquer_choix(self, n_choix: int):
         """Appliquer la réponse à la question actuelle."""
         self.prev.append(self.etat)
         self.next = list()
-        new_trait = self.question.traits[choix]
+        new_trait = QUESTIONS[self.etat.n_question].traits[n_choix]
         traits, n_question = self.etat
         self.etat = Etat(
                 set(traits).union({new_trait}).difference({oppose(new_trait)}),
@@ -97,5 +101,5 @@ class Modele:
                 )
         return
         self.etat = self.etat \
-            .ajouter_trait(self.question.traits[choix]) \
+            .ajouter_trait(self.question.traits[n_choix]) \
             .avancer_question()
