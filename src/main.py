@@ -1,83 +1,151 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, auto
+from typing import Callable, Sequence, NamedTuple
 import flet as ft
 
 
-class Couleur(Enum):
-    FEU = ft.Colors.RED
-    AIR = ft.Colors.GREEN
-    TERRE = ft.Colors.BROWN
-    EAU = ft.Colors.BLUE
+def oppose(fonction: str):
+    """Donner la fonction opposée."""
+    match fonction:
+        case "I": return "E"
+        case "N": return "S"
+        case "T": return "F"
+        case "P": return "J"
+        case "E": return "I"
+        case "S": return "N"
+        case "F": return "T"
+        case "J": return "P"
+        case _:
+            raise ValueError(f"La fonction {fonction} n'existe pas.")
 
 
-@dataclass
-class Question:
-    """Une question qui déterminera une fonction parmi deux opposées."""
-
-    fonction: str  # deux lettres pour fonctions opposées
-    question: str
-    choix: (str, str)
-
-    @classmethod
-    def get_questions(cls):
-        return list(reversed((
-                Question("SN",
-                         "Vous percevez les éléments autour de vous plutôt...",
-                         ("avec vos sens", "avec votre intuition")),
-                Question("FT",
-                         "Vous prenez des décisions plutôt...",
-                         ("avec votre sentiment", "avec votre réflexion")),
-                )))
+class Element(Enum):
+    FEU = auto()
+    AIR = auto()
+    TERRE = auto()
+    EAU = auto()
 
 
-@dataclass
+@dataclass(frozen=True)
 class Archetype:
-    """Un type de personalité déterminé par un ou plusieurs archetypes."""
+    """Un aspect de personalité déterminé par une ou plusieurs fonctions."""
     nom: str
     fonctions: str
-    color: ft.Colors = ft.Colors.WHITE
-
-    def __hash__(self):
-        return hash(self.nom)
+    element: Element
 
     @classmethod
     def elements(cls):
         return (
-            cls("Feu", "NT", Couleur.FEU),
-            cls("Air", "NF", Couleur.AIR),
-            cls("Terre", "ST", Couleur.TERRE),
-            cls("Eau", "SF", Couleur.EAU),
+            cls("Feu", "NT", Element.FEU),
+            cls("Air", "NF", Element.AIR),
+            cls("Terre", "ST", Element.TERRE),
+            cls("Eau", "SF", Element.EAU),
             )
 
+    def compatible(self, etat: Etat) -> bool:
+        """Vérifier si l'archetype est compatible avec l'état fourni."""
+        for fonction in etat.fonctions:
+            if oppose(fonction) in self.fonctions:
+                return False
+        return True
 
-@ft.control
-class ArchetypeWidget(ft.Text):
-    """Vue d'un Archetype."""
-    archetype: Archetype | None = None
 
-    def init(self):
-        self.color = self.archetype.color.value
-        self.value = self.archetype.nom
+class Question(NamedTuple):
+    """Une question qui déterminera une fonction parmi deux opposées."""
+    fonctions: (str, str)
+    question: str
+    choix: (str, str)
 
-    def disable(self):
-        self.color = "#333333"
+
+QUESTIONS = (
+    Question(fonctions=tuple("SN"),
+             question="Vous percevez les éléments autour de vous plutôt...",
+             choix=("avec vos sens", "avec votre intuition")),
+    Question(fonctions=("F", "T"),
+             question="Vous prenez des décisions plutôt...",
+             choix=("avec votre sentiment", "avec votre réflexion")),
+    )
+
+
+class Etat(NamedTuple):
+    """État du modèle à un moment donné."""
+    fonctions: tuple = ()  # field(default_factory=tuple)
+    n_question: int = 0
+
+    def __add__(self, item: str | int):
+        """Retourner un nouvel état modifié."""
+        if isinstance(item, str):
+            fonctions = set(self.fonctions)
+            if oppose(item) in fonctions:
+                fonctions.remove(oppose(item))
+            fonctions.add(item)
+            return Etat(set(fonctions), self.n_question)
+        elif isinstance(item, int):
+            return Etat(self.fonctions,
+                        (self.n_question + item) % len(QUESTIONS))
+        else:
+            raise ValueError(f"can't add {item} to Etat")
+
+    def __sub__(self, item: int):
+        """Retourner un nouvel état modifié."""
+        if isinstance(item, int):
+            return Etat(self.fonctions,
+                        (self.n_question - item) % len(QUESTIONS))
+        else:
+            raise ValueError(f"can't add {item} to Etat")
 
 
 @dataclass
 class Modele:
-    questions: list[Question] = field(default_factory=Question.get_questions)
+    """État actuel, passé et présent des fonctions établies."""
+    etat: Etat = field(default_factory=Etat)
+    prev: list[Etat] = field(default_factory=list)
+    next: list[Etat] = field(default_factory=list)
+    elements: tuple[Archetype] = field(default_factory=Archetype.elements)
 
-    def get_question(self) -> Question:
-        try:
-            question = self.questions.pop()
-        except IndexError:
-            return None
-        return question
+    @property
+    def question(self):
+        return QUESTIONS[self.etat.n_question]
+
+    def add(self, item: str | int):
+        """Avancer l'état actuel en ajoutant un item (fonction ou n_quest)."""
+        self.prev.append(self.etat)
+        self.next = list()
+        self.etat += item
+        self.etat += 1
+
+    def gerer_choix(self, choix: int):
+        self.add(self.question.fonctions[choix])
+
+
+class ArchetypeWidget(ft.Text):
+    """Vue d'un Archetype."""
+    archetype: Archetype
+
+    COULEUR = {
+        Element.FEU: ft.Colors.RED,
+        Element.AIR: ft.Colors.GREEN,
+        Element.TERRE: ft.Colors.BROWN,
+        Element.EAU: ft.Colors.BLUE,
+    }
+
+    def __init__(self, archetype: Archetype):
+        super().__init__()
+        self.archetype = archetype
+        self.value = self.archetype.nom
+
+    def update(self, etat: Etat):
+        if self.archetype.compatible(etat):
+            self.color = self.COULEUR[self.archetype.element]
+        else:
+            self.color = "#333333"
 
 
 @ft.control
-class App(ft.Container):
-    modele: Modele = field(default_factory=Modele)
+class Vue(ft.Container):
+    callback_gauche: Callable | None = None
+    callback_droite: Callable | None = None
 
     def init(self):
         self.width = 400
@@ -93,19 +161,12 @@ class App(ft.Container):
         for n in range(2):
             self.reponses.controls.append(
                 ft.Button(content="", on_click=lambda _, choix=n:
-                          self.gerer_choix(choix)))
-
+                          self._gerer_choix(choix)))
         self.element_row = ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 tight=True,
                 spacing=20,
                 )
-        self.elements = {}
-        for element in Archetype.elements():
-            widget = ArchetypeWidget(archetype=element)
-            self.element_row.controls.append(widget)
-            self.elements[element] = widget
-
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
                 controls=[
@@ -114,25 +175,30 @@ class App(ft.Container):
                     self.element_row,
                     ])
 
-        self.preparer_question(self.modele.get_question())
+    def post_init(self, page: ft.Page, elements: Sequence[Element],
+                  gerer_choix: Callable[[int], None]):
+        self._gerer_choix = gerer_choix
+        page.title = "Faites votre choix..."
+        page.theme_mode = ft.ThemeMode.DARK
+        page.vertical_alignment = ft.MainAxisAlignment.CENTER
+        page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+        page.add(self)
+        for element in elements:
+            widget = ArchetypeWidget(archetype=element)
+            self.element_row.controls.append(widget)
+        page.update()
 
-    def preparer_question(self, question: Question):
+    def update(self, question: Question, etat: Etat):
+        for element_widget in self.element_row.controls:
+            element_widget.update(etat)
         self.question.value = question.question
         for n in range(2):
             self.reponses.controls[n].content = question.choix[n]
-        self.effet_reponse = question.fonction
+        super().update()
 
     def finaliser(self):
         self.question.value = "FINI!"
         self.reponses.controls = []
-
-    def gerer_choix(self, choix):
-        self.exclude(self.effet_reponse[1-choix])
-        prochaine_question = self.modele.get_question()
-        if prochaine_question:
-            self.preparer_question(prochaine_question)
-        else:
-            self.finaliser()
 
     def exclude(self, excluded):
         for element in Archetype.elements():
@@ -140,16 +206,22 @@ class App(ft.Container):
                 self.elements[element].disable()
 
 
-def main(page: ft.Page):
-    page.title = "Faites votre choix..."
-    page.theme_mode = ft.ThemeMode.DARK
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    vue = App()
-    page.add(vue)
-    page.update()
+class Controle:
+    """Gérer les communications entre modèle et vue."""
+    modele: Modele
+    vue: Vue
+
+    def __init__(self, page: ft.Page):
+        """Mettre en place les canaux de communication."""
+        self.modele = Modele()
+        self.vue = Vue()
+        self.vue.post_init(page, self.modele.elements, self.gerer_choix)
+        self.vue.update(self.modele.question, self.modele.etat)
+
+    def gerer_choix(self, choix: int):
+        self.modele.gerer_choix(choix)
+        self.vue.update(self.modele.question, self.modele.etat)
 
 
 if __name__ == "__main__":
-    # ft.app(target=main, assets_dir="assets", view=ft.WEB_BROWSER)
-    ft.run(main)
+    ft.run(Controle)
