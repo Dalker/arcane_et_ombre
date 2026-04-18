@@ -1,10 +1,9 @@
 """Modèle de l'application.
 
-Ce module exporte les Modele, Etat, Archetype, Element
+Ce module exporte les Modele, Etat, Archetype, Element et la fonction oppose.
 
  - Element: Enum des éléments FEU, AIR, TERRE, EAU
  - Archetype(nom: str, traits: str, element: Element)
-    @classmethod elements() -> tuple[Archetype]
  - Etat(traits: tuple[str], n_question: int)
 """
 from __future__ import annotations
@@ -70,7 +69,11 @@ QUESTIONS = (
 
 
 class Etat(NamedTuple):
-    """État du modèle à un moment donné, accessible par la Vue."""
+    """État du modèle à un moment donné, accessible par la Vue.
+
+    Les données sont délibérément simples pour pouvoir facilement stocker
+    plusieurs Etat dans une mémoire de type "<- prev, next ->".
+    """
     traits: tuple[str] = ()
     n_question: int = 0
 
@@ -89,26 +92,25 @@ class Etat(NamedTuple):
                 return False
         return True
 
+    def avec_prochaine_question(self) -> Etat:
+        return Etat(self.traits, (self.n_question + 1) % len(QUESTIONS))
+
+    def avec_trait(self, new_trait: str) -> Etat:
+        return Etat(set(self.traits)
+                    .union({new_trait})
+                    .difference({oppose(new_trait)}),
+                    self.n_question)
+
 
 @dataclass
 class Modele:
     """État actuel, passé et présent des traits établies."""
     etat: Etat = field(default_factory=Etat)
-    prev: list[Etat] = field(default_factory=list)
-    next: list[Etat] = field(default_factory=list)
     elements: tuple[Archetype] = field(default_factory=Archetype.elements)
 
     def appliquer_choix(self, n_choix: int):
         """Appliquer la réponse à la question actuelle."""
-        self.prev.append(self.etat)
-        self.next = list()
         new_trait = QUESTIONS[self.etat.n_question].traits[n_choix]
-        traits, n_question = self.etat
-        self.etat = Etat(
-                set(traits).union({new_trait}).difference({oppose(new_trait)}),
-                (n_question + 1) % len(QUESTIONS)
-                )
-        return
         self.etat = self.etat \
-            .ajouter_trait(self.question.traits[n_choix]) \
-            .avancer_question()
+            .avec_trait(new_trait) \
+            .avec_prochaine_question()
