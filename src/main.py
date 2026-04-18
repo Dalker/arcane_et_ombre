@@ -5,7 +5,7 @@ Il maintient aussi une mémoire des Etat pour pouvoir implémenter
 l'annulation d'actions précédentes.
 """
 import flet as ft
-from model import Modele, Etat
+from modele import Modele, Etat
 from vue import Vue
 
 
@@ -17,11 +17,11 @@ class Controle:
 
     def __init__(self, page: ft.Page):
         """Mettre en place les canaux de communication."""
-        self.modele = Modele()
         self._prev_buffer = list()
         self._next_buffer = list()
+        self.modele = Modele()
         self.vue = Vue()
-        self.vue.post_init(page, self.modele.elements, self.gerer_choix)
+        self.vue.post_init(page, self.gerer_choix)
         self.update()
 
     def update(self):

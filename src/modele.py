@@ -106,7 +106,6 @@ class Etat(NamedTuple):
 class Modele:
     """État actuel, passé et présent des traits établies."""
     etat: Etat = field(default_factory=Etat)
-    elements: tuple[Archetype] = field(default_factory=Archetype.elements)
 
     def appliquer_choix(self, n_choix: int):
         """Appliquer la réponse à la question actuelle."""

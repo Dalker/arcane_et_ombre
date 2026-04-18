@@ -8,7 +8,7 @@ Ce module exporte la classe Vue, dont les méthodes publiques sont:
 """
 from typing import Callable, Sequence
 import flet as ft
-from model import Etat, Element, Archetype
+from modele import Etat, Element, Archetype
 
 
 class ArchetypeWidget(ft.Text):
@@ -81,17 +81,14 @@ class VueArchetypes(ft.Container):
                 alignment=ft.MainAxisAlignment.CENTER,
                 tight=True,
                 spacing=20,
+                controls=[ArchetypeWidget(archetype=element)
+                          for element in Archetype.elements()]
                 )
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
                 controls=[
                     self.element_row,
                     ])
-
-    def post_init(self, elements: Sequence[Archetype]):
-        for element in elements:
-            widget = ArchetypeWidget(archetype=element)
-            self.element_row.controls.append(widget)
 
     def update(self, etat: Etat):
         for element_widget in self.element_row.controls:
@@ -120,10 +117,8 @@ class Vue(ft.Container):
 
     def post_init(self,
                   page: ft.Page,
-                  elements: Sequence[Archetype],
                   gerer_choix: Callable[[int], None]):
         self.dialogue.post_init(gerer_choix)
-        self.archetypes.post_init(elements)
         page.title = "Faites votre choix..."
         page.theme_mode = ft.ThemeMode.DARK
         page.vertical_alignment = ft.MainAxisAlignment.CENTER
