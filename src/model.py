@@ -1,3 +1,12 @@
+"""Modèle de l'application.
+
+Ce module exporte les Modele, Etat, Archetype, Element
+
+ - Element: Enum des éléments FEU, AIR, TERRE, EAU
+ - Archetype(nom: str, traits: str, element: Element)
+    @classmethod elements() -> tuple[Archetype]
+ - Etat(traits: tuple[str], n_question: int)
+"""
 from __future__ import annotations
 from enum import Enum, auto
 from dataclasses import dataclass, field
@@ -34,7 +43,7 @@ class Archetype:
     element: Element
 
     @classmethod
-    def elements(cls):
+    def elements(cls) -> tuple[Archetype]:
         return (
             cls("Feu", "NT", Element.FEU),
             cls("Air", "NF", Element.AIR),
