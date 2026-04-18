@@ -27,17 +27,14 @@ class ArchetypeWidget(ft.Text):
 
 
 @ft.control
-class Vue(ft.Container):
-    callback_gauche: Callable | None = None
-    callback_droite: Callable | None = None
+class VueDialogue(ft.Container):
+    """Partie de la Vue pour les questions / réponses et texte de fin."""
 
     def init(self):
-        self.width = 400
         self.alignment = ft.Alignment.CENTER
         self.bgcolor = ft.Colors.BLACK
         self.border_radius = ft.BorderRadius.all(20)
         self.padding = 20
-
         self.question = ft.Text(color=ft.Colors.WHITE)
         self.reponses = ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
@@ -46,6 +43,32 @@ class Vue(ft.Container):
             self.reponses.controls.append(
                 ft.Button(content="", on_click=lambda _, choix=n:
                           self._gerer_choix(choix)))
+        self.content = ft.Column(
+                horizontal_alignment=ft.MainAxisAlignment.CENTER,
+                controls=[
+                    self.question,
+                    self.reponses,
+                    ])
+
+    def post_init(self, gerer_choix: Callable[[int], None]):
+        self._gerer_choix = gerer_choix
+
+    def update(self, etat: Etat):
+        self.question.value = etat.question
+        for n in range(2):
+            self.reponses.controls[n].content = etat.choix[n]
+        super().update()
+
+
+@ft.control
+class VueArchetypes(ft.Container):
+    """Partie de la Vue pour les archétypes."""
+
+    def init(self):
+        self.alignment = ft.Alignment.CENTER
+        self.bgcolor = ft.Colors.BLACK
+        self.border_radius = ft.BorderRadius.all(20)
+        self.padding = 20
         self.element_row = ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 tight=True,
@@ -54,40 +77,54 @@ class Vue(ft.Container):
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
                 controls=[
-                    self.question,
-                    self.reponses,
                     self.element_row,
                     ])
 
+    def post_init(self, elements: Sequence[Element]):
+        for element in elements:
+            widget = ArchetypeWidget(archetype=element)
+            self.element_row.controls.append(widget)
+
+    def update(self, etat: Etat):
+        for element_widget in self.element_row.controls:
+            element_widget.update(etat)
+        super().update()
+
+
+@ft.control
+class Vue(ft.Container):
+    callback_gauche: Callable | None = None
+    callback_droite: Callable | None = None
+
+    def init(self):
+        self.width = 450
+        self.alignment = ft.Alignment.CENTER
+        self.bgcolor = ft.Colors.GREY_800
+        self.border_radius = ft.BorderRadius.all(20)
+        self.padding = 20
+
+        self.dialogue = VueDialogue()
+        self.archetypes = VueArchetypes()
+
+        self.content = ft.Column(
+                horizontal_alignment=ft.MainAxisAlignment.CENTER,
+                controls=[self.dialogue, self.archetypes])
+
     def post_init(self, page: ft.Page, elements: Sequence[Element],
                   gerer_choix: Callable[[int], None]):
-        self._gerer_choix = gerer_choix
+        self.dialogue.post_init(gerer_choix)
+        self.archetypes.post_init(elements)
         page.title = "Faites votre choix..."
         page.theme_mode = ft.ThemeMode.DARK
         page.vertical_alignment = ft.MainAxisAlignment.CENTER
         page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         page.add(self)
-        for element in elements:
-            widget = ArchetypeWidget(archetype=element)
-            self.element_row.controls.append(widget)
         page.update()
 
     def update(self, etat: Etat):
-        for element_widget in self.element_row.controls:
-            element_widget.update(etat)
-        self.question.value = etat.question
-        for n in range(2):
-            self.reponses.controls[n].content = etat.choix[n]
+        self.dialogue.update(etat)
+        self.archetypes.update(etat)
         super().update()
-
-    def finaliser(self):
-        self.question.value = "FINI!"
-        self.reponses.controls = []
-
-    def exclude(self, excluded):
-        for element in Archetype.elements():
-            if excluded in element.fonctions and self.elements[element]:
-                self.elements[element].disable()
 
 
 class Controle:
