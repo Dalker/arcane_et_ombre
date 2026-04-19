@@ -5,26 +5,13 @@ Ce module exporte les Modele, Etat, Archetype, Element et la fonction oppose.
  - Element: Enum des éléments FEU, AIR, TERRE, EAU
  - Archetype(nom: str, traits: str, element: Element)
  - Etat(traits: tuple[str], n_question: int)
+ 
+ Toutes les classes définies dans ce module ont des instances immuables.
 """
 from __future__ import annotations
 from enum import Enum, auto
 from dataclasses import dataclass, field
 from typing import NamedTuple
-
-
-def oppose(trait: str):
-    """Donner la trait opposée."""
-    match trait:
-        case "I": return "E"
-        case "N": return "S"
-        case "T": return "F"
-        case "P": return "J"
-        case "E": return "I"
-        case "S": return "N"
-        case "F": return "T"
-        case "J": return "P"
-        case _:
-            raise ValueError(f"La trait {trait} n'existe pas.")
 
 
 class Element(Enum):
@@ -34,15 +21,14 @@ class Element(Enum):
     EAU = auto()
 
 
-@dataclass(frozen=True)
-class Archetype:
+class Archetype(NamedTuple):
     """Un aspect de personalité déterminé par une ou plusieurs traits."""
     nom: str
     traits: str
     element: Element
 
     @classmethod
-    def elements(cls) -> tuple[Archetype]:
+    def elements(cls) -> tuple[Archetype, ...]:
         return (
             cls("Feu", "NT", Element.FEU),
             cls("Air", "NF", Element.AIR),
@@ -51,65 +37,75 @@ class Archetype:
             )
 
 
-class Question(NamedTuple):
-    """Une question qui déterminera une trait parmi deux opposées."""
-    traits: (str, str)
+class Decision(NamedTuple):
+    """Question/réponses qui détermineront un trait parmi deux opposées."""
     question: str
-    choix: (str, str)
+    reponses: tuple[str, str]
+    resultats: tuple[str, str]
+
+    @classmethod
+    def sequence(cls) -> tuple[Decision, ...]:
+        """Retourner la séquence des décisions à prendre, dans l'ordre."""
+        return (
+            Decision(
+                 question="Vous percevez les éléments autour de vous plutôt...",
+                 reponses=("avec vos sens", "avec votre intuition"),
+                 resultats=("S", "N"),
+                 ),
+            Decision(
+                 question="Vous prenez des décisions plutôt...",
+                 reponses=("avec votre sentiment", "avec votre réflexion"),
+                 resultats=("F", "T"),
+                 ),
+        )
 
 
-QUESTIONS = (
-    Question(traits=tuple("SN"),
-             question="Vous percevez les éléments autour de vous plutôt...",
-             choix=("avec vos sens", "avec votre intuition")),
-    Question(traits=("F", "T"),
-             question="Vous prenez des décisions plutôt...",
-             choix=("avec votre sentiment", "avec votre réflexion")),
-    )
+@dataclass(frozen=True)
+class Traits:
+    """Ensemble de traits de personnalité déjà déterminés."""
+    _traits: set[str] = field(default_factory=set)
 
+    @staticmethod
+    def oppose(trait: str):
+        """Donner la trait opposé."""
+        match trait:
+            case "I": return "E"
+            case "N": return "S"
+            case "T": return "F"
+            case "P": return "J"
+            case "E": return "I"
+            case "S": return "N"
+            case "F": return "T"
+            case "J": return "P"
+            case _:
+                raise ValueError(f"La trait {trait} n'existe pas.")
 
-class Etat(NamedTuple):
-    """État du modèle à un moment donné, accessible par la Vue.
+    def __add__(self, new_trait: str) -> Traits:
+        return Traits(self._traits
+                      .union({new_trait})
+                      .difference({self.oppose(new_trait)}))
 
-    Les données sont délibérément simples pour pouvoir facilement stocker
-    plusieurs Etat dans une mémoire de type "<- prev, next ->".
-    """
-    traits: tuple[str] = ()
-    n_question: int = 0
-
-    @property
-    def question(self):
-        return QUESTIONS[self.n_question].question
-
-    @property
-    def choix(self):
-        return QUESTIONS[self.n_question].choix
-
-    def compatible(self, archetype: Archetype) -> bool:
-        """Vérifier si l'archetype est compatible."""
+    def compatibles(self, archetype: Archetype) -> bool:
+        """Vérifier si l'archetype est compatible avec les traits connus."""
         for trait in archetype.traits:
-            if oppose(trait) in self.traits:
+            if self.oppose(trait) in self._traits:
                 return False
         return True
 
-    def avec_prochaine_question(self) -> Etat:
-        return Etat(self.traits, (self.n_question + 1) % len(QUESTIONS))
 
-    def avec_trait(self, new_trait: str) -> Etat:
-        return Etat(set(self.traits)
-                    .union({new_trait})
-                    .difference({oppose(new_trait)}),
-                    self.n_question)
+@dataclass(frozen=True)
+class EtatVisible:
+    """État du modèle à un moment donné, accessible par la Vue."""
+    decision: Decision | None
+    traits: Traits = field(default_factory=Traits)
 
+    @property
+    def question(self):
+        return self.decision.question if self.decision else "FINI!"
 
-@dataclass
-class Modele:
-    """État actuel, passé et présent des traits établies."""
-    etat: Etat = field(default_factory=Etat)
+    @property
+    def reponses(self):
+        return self.decision.reponses if self.decision else ("", "")
 
-    def appliquer_choix(self, n_choix: int):
-        """Appliquer la réponse à la question actuelle."""
-        new_trait = QUESTIONS[self.etat.n_question].traits[n_choix]
-        self.etat = self.etat \
-            .avec_trait(new_trait) \
-            .avec_prochaine_question()
+    def compatible(self, archetype: Archetype) -> bool:
+        return self.traits.compatibles(archetype)

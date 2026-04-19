@@ -6,9 +6,9 @@ Ce module exporte la classe Vue, dont les méthodes publiques sont:
                     gerer_choix: Callable[[int], None])
     - vue.update(etat: Etat)
 """
-from typing import Callable, Sequence
+from typing import Callable
 import flet as ft
-from modele import Etat, Element, Archetype
+from modele import EtatVisible, Element, Archetype
 
 
 class ArchetypeWidget(ft.Text):
@@ -27,7 +27,7 @@ class ArchetypeWidget(ft.Text):
         self.archetype = archetype
         self.value = self.archetype.nom
 
-    def update(self, etat: Etat):
+    def update_etat(self, etat: EtatVisible):
         if etat.compatible(self.archetype):
             self.color = self.COULEUR[self.archetype.element]
         else:
@@ -61,10 +61,10 @@ class VueDialogue(ft.Container):
     def post_init(self, gerer_choix: Callable[[int], None]):
         self._gerer_choix = gerer_choix
 
-    def update(self, etat: Etat):
+    def update_etat(self, etat: EtatVisible):
         self.question.value = etat.question
         for n in range(2):
-            self.reponses.controls[n].content = etat.choix[n]
+            self.reponses.controls[n].content = etat.reponses[n]
         super().update()
 
 
@@ -90,9 +90,9 @@ class VueArchetypes(ft.Container):
                     self.element_row,
                     ])
 
-    def update(self, etat: Etat):
+    def update_etat(self, etat: EtatVisible):
         for element_widget in self.element_row.controls:
-            element_widget.update(etat)
+            element_widget.update_etat(etat)
         super().update()
 
 
@@ -126,7 +126,7 @@ class Vue(ft.Container):
         page.add(self)
         page.update()
 
-    def update(self, etat: Etat):
-        self.dialogue.update(etat)
-        self.archetypes.update(etat)
+    def update(self, etat: EtatVisible):
+        self.dialogue.update_etat(etat)
+        self.archetypes.update_etat(etat)
         super().update()
