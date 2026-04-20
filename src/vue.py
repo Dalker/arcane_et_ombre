@@ -8,7 +8,7 @@ Ce module exporte la classe Vue, dont les méthodes publiques sont:
 """
 from typing import Callable
 import flet as ft
-from modele import EtatVisible, Element, Archetype
+from modele import Etat, Element, Archetype
 
 
 class ArchetypeWidget(ft.Text):
@@ -27,7 +27,7 @@ class ArchetypeWidget(ft.Text):
         self.archetype = archetype
         self.value = self.archetype.nom
 
-    def update_etat(self, etat: EtatVisible):
+    def update_etat(self, etat: Etat):
         if etat.compatible(self.archetype):
             self.color = self.COULEUR[self.archetype.element]
         else:
@@ -61,7 +61,7 @@ class VueDialogue(ft.Container):
     def post_init(self, gerer_choix: Callable[[int], None]):
         self._gerer_choix = gerer_choix
 
-    def update_etat(self, etat: EtatVisible):
+    def update_etat(self, etat: Etat):
         self.question.value = etat.question
         for n in range(2):
             self.reponses.controls[n].content = etat.reponses[n]
@@ -90,7 +90,7 @@ class VueArchetypes(ft.Container):
                     self.element_row,
                     ])
 
-    def update_etat(self, etat: EtatVisible):
+    def update_etat(self, etat: Etat):
         for element_widget in self.element_row.controls:
             element_widget.update_etat(etat)
         super().update()
@@ -113,7 +113,8 @@ class Vue(ft.Container):
 
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
-                controls=[self.dialogue, self.archetypes])
+                controls=[self.dialogue, self.archetypes]
+                )
 
     def post_init(self,
                   page: ft.Page,

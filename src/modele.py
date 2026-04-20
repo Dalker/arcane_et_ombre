@@ -94,7 +94,7 @@ class Traits:
 
 
 @dataclass(frozen=True)
-class EtatVisible:
+class Etat:
     """État du modèle à un moment donné, accessible par la Vue."""
     decision: Decision | None
     traits: Traits = field(default_factory=Traits)
