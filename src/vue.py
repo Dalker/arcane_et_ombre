@@ -6,9 +6,17 @@ Ce module exporte la classe Vue, dont les méthodes publiques sont:
                     gerer_choix: Callable[[int], None])
     - vue.update(etat: Etat)
 """
+from __future__ import annotations
 from typing import Callable
+from enum import Enum, auto
 import flet as ft
 from modele import Etat, Element, Archetype
+
+
+class Commande(Enum):
+    DECIDER_TRAIT = auto()
+    UNDO = auto()
+    REDO = auto()
 
 
 class ArchetypeWidget(ft.Text):
@@ -50,7 +58,7 @@ class VueDialogue(ft.Container):
         for n in range(2):
             self.reponses.controls.append(
                 ft.Button(content="", on_click=lambda _, choix=n:
-                          self._gerer_choix(choix)))
+                          self._demande(Commande.DECIDER_TRAIT, choix)))
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
                 controls=[
@@ -58,8 +66,8 @@ class VueDialogue(ft.Container):
                     self.reponses,
                     ])
 
-    def post_init(self, gerer_choix: Callable[[int], None]):
-        self._gerer_choix = gerer_choix
+    def post_init(self, demande: Callable[[Commande, str | None], None]):
+        self._demande = demande
 
     def update_etat(self, etat: Etat):
         self.question.value = etat.question
@@ -118,8 +126,8 @@ class Vue(ft.Container):
 
     def post_init(self,
                   page: ft.Page,
-                  gerer_choix: Callable[[int], None]):
-        self.dialogue.post_init(gerer_choix)
+                  demande: Callable[[Commande, str | None], None]):
+        self.dialogue.post_init(demande)
         page.title = "Faites votre choix..."
         page.theme_mode = ft.ThemeMode.DARK
         page.vertical_alignment = ft.MainAxisAlignment.CENTER

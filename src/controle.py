@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import flet as ft
 
 from modele import Etat, Decision
-from vue import Vue
+from vue import Vue, Commande
 
 
 @dataclass
@@ -54,8 +54,17 @@ class Controle:
         self._next_buffer = list()
         self.etat = EtatMemorisable.initial()
         self.vue = Vue()
-        self.vue.post_init(page, self.gerer_choix)
+        self.vue.post_init(page, self.demande)
         self.vue.update(self.etat.etat_visible)
+
+    def demande(self, commande: Commande, argument: int | None):
+        match commande:
+            case Commande.DECIDER_TRAIT:
+                self.gerer_choix(argument)
+            case Commande.UNDO:
+                ...
+            case Commande.REDO:
+                ...
 
     def gerer_choix(self, choix: int):
         """Gérer un choix demandé par la vue."""
