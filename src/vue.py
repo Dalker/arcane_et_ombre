@@ -127,7 +127,10 @@ class Vue(ft.Container):
         page.add(self)
         page.update()
 
-    def update(self, etat: EtatVisible):
-        self.dialogue.update_etat(etat)
+    def update(self, etat: Etat):
+        if etat.decision is None:
+            self.content.controls = [self.archetypes]
+        else:
+            self.dialogue.update_etat(etat)
         self.archetypes.update_etat(etat)
         super().update()
