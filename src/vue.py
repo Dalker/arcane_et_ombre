@@ -42,15 +42,29 @@ class ArchetypeWidget(ft.Text):
             self.color = "#333333"
 
 
-@ft.control
-class VueDialogue(ft.Container):
-    """Partie de la Vue pour les questions / réponses et texte de fin."""
+class Demandeur:
+    _demander: Callable[[Commande, str | None], None] | None
+
+    def post_init(self, demander: Callable[[Commande, str | None], None]):
+        self._demander = demander
+
+
+class Frame(ft.Container):
+    """Partie visuellement distincte de la Vue."""
 
     def init(self):
         self.alignment = ft.Alignment.CENTER
         self.bgcolor = ft.Colors.BLACK
         self.border_radius = ft.BorderRadius.all(20)
         self.padding = 20
+
+
+@ft.control
+class VueDialogue(Frame, Demandeur):
+    """Partie de la Vue pour les questions / réponses et texte de fin."""
+
+    def init(self):
+        super().init()
         self.question = ft.Text(color=ft.Colors.WHITE)
         self.reponses = ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
@@ -58,16 +72,13 @@ class VueDialogue(ft.Container):
         for n in range(2):
             self.reponses.controls.append(
                 ft.Button(content="", on_click=lambda _, choix=n:
-                          self._demande(Commande.DECIDER_TRAIT, choix)))
+                          self._demander(Commande.DECIDER_TRAIT, choix)))
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
                 controls=[
                     self.question,
                     self.reponses,
                     ])
-
-    def post_init(self, demande: Callable[[Commande, str | None], None]):
-        self._demande = demande
 
     def update_etat(self, etat: Etat):
         self.question.value = etat.question
@@ -77,14 +88,16 @@ class VueDialogue(ft.Container):
 
 
 @ft.control
-class VueArchetypes(ft.Container):
+class VueUndoRedo(Frame, Demandeur):
+    """Conteneur de boutons undo / reset / redo."""
+
+
+@ft.control
+class VueArchetypes(Frame):
     """Partie de la Vue pour les archétypes."""
 
     def init(self):
-        self.alignment = ft.Alignment.CENTER
-        self.bgcolor = ft.Colors.BLACK
-        self.border_radius = ft.BorderRadius.all(20)
-        self.padding = 20
+        super().init()
         self.element_row = ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 tight=True,
@@ -138,7 +151,6 @@ class Vue(ft.Container):
     def update(self, etat: Etat):
         if etat.decision is None:
             self.content.controls = [self.archetypes]
-        else:
-            self.dialogue.update_etat(etat)
-        self.archetypes.update_etat(etat)
+        for widget in (self.dialogue, self.archetypes):
+            widget.update_etat(etat)
         super().update()
