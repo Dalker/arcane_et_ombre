@@ -92,6 +92,16 @@ class Decision(NamedTuple):
                  reponses=("avec votre sentiment", "avec votre réflexion"),
                  resultats=("F", "T"),
                  ),
+            Decision(
+                 question="Votre personnage se sent plus libre quand...",
+                 reponses=("il improvise", "il organise"),
+                 resultats=("P", "J"),
+                 ),
+            Decision(
+                 question="L'orientation de votre personnage est...",
+                 reponses=("introvertie", "extravertie"),
+                 resultats=("I", "E"),
+                 ),
         )
 
 
