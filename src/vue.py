@@ -126,6 +126,7 @@ class VueArchetypes(Frame):
         self.arcane_row = ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 tight=True,
+                wrap=True,
                 spacing=20,
                 controls=[ArchetypeWidget(archetype=arcane)
                           for arcane in Archetype.arcanes()]

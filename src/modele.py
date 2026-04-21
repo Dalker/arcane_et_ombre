@@ -36,7 +36,20 @@ class Archetype(NamedTuple):
     ARCANES = {
             "ENTJ": "Fou",
             "INTJ": "Roue",
-            "ISTJ": "Lune",
+            "ENTP": "Ermite",
+            "INTP": "Soleil",
+            "ENFJ": "Empereur",
+            "INFJ": "Tempérance",
+            "ENFP": "Pape",
+            "INFP": "Diable",
+            "ESTJ": "Papesse",
+            "ISTJ": "Pendu",
+            "ESTP": "Chariot",
+            "ISTP": "Étoile",
+            "ESFJ": "Magicien",
+            "ISFJ": "Justice",
+            "ESFP": "Force",
+            "ISFP": "Lune",
             }
 
     @property
