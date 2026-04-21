@@ -57,7 +57,7 @@ class Controle:
         self.vue.post_init(page, self.demande)
         self.vue.update(self.etat.etat_visible)
 
-    def demande(self, commande: Commande, argument: int | None):
+    def demande(self, commande: Commande, argument: int | None = None):
         match commande:
             case Commande.DECIDER_TRAIT:
                 self.gerer_choix(argument)

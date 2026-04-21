@@ -43,10 +43,11 @@ class ArchetypeWidget(ft.Text):
 
 
 class Demandeur:
-    _demander: Callable[[Commande, str | None], None] | None
+    """Mixin pour insérer un moyen d'envoyer des Commandes au Controle."""
+    demander: Callable[[Commande, str | None], None] | None
 
     def post_init(self, demander: Callable[[Commande, str | None], None]):
-        self._demander = demander
+        self.demander = demander
 
 
 class Frame(ft.Container):
@@ -72,7 +73,7 @@ class VueDialogue(Frame, Demandeur):
         for n in range(2):
             self.reponses.controls.append(
                 ft.Button(content="", on_click=lambda _, choix=n:
-                          self._demander(Commande.DECIDER_TRAIT, choix)))
+                          self.demander(Commande.DECIDER_TRAIT, choix)))
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
                 controls=[
@@ -90,6 +91,23 @@ class VueDialogue(Frame, Demandeur):
 @ft.control
 class VueUndoRedo(Frame, Demandeur):
     """Conteneur de boutons undo / reset / redo."""
+    def init(self):
+        super().init()
+        self.commandes = ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                )
+        self.commandes.controls = [
+            ft.Button(content="<-", on_click=lambda _:
+                      self.demander(Commande.UNDO)),
+            ft.Button(content="->", on_click=lambda _:
+                      self.demander(Commande.REDO)),
+            ]
+        self.content = ft.Column(
+                horizontal_alignment=ft.MainAxisAlignment.CENTER,
+                controls=[
+                    self.commandes,
+                    ])
+
 
 
 @ft.control
@@ -131,16 +149,18 @@ class Vue(ft.Container):
 
         self.dialogue = VueDialogue()
         self.archetypes = VueArchetypes()
+        self.undo_redo = VueUndoRedo()
 
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
-                controls=[self.dialogue, self.archetypes]
+                controls=[self.dialogue, self.archetypes, self.undo_redo]
                 )
 
     def post_init(self,
                   page: ft.Page,
                   demande: Callable[[Commande, str | None], None]):
-        self.dialogue.post_init(demande)
+        for widget in (self.dialogue, self.undo_redo):
+            widget.post_init(demande)
         page.title = "Faites votre choix..."
         page.theme_mode = ft.ThemeMode.DARK
         page.vertical_alignment = ft.MainAxisAlignment.CENTER
