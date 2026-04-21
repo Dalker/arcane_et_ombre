@@ -91,6 +91,7 @@ class VueDialogue(Frame, Demandeur):
 @ft.control
 class VueUndoRedo(Frame, Demandeur):
     """Conteneur de boutons undo / reset / redo."""
+
     def init(self):
         super().init()
         self.commandes = ft.Row(
@@ -109,7 +110,6 @@ class VueUndoRedo(Frame, Demandeur):
                     ])
 
 
-
 @ft.control
 class VueArchetypes(Frame):
     """Partie de la Vue pour les archétypes."""
@@ -123,14 +123,24 @@ class VueArchetypes(Frame):
                 controls=[ArchetypeWidget(archetype=element)
                           for element in Archetype.elements()]
                 )
+        self.arcane_row = ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                tight=True,
+                spacing=20,
+                controls=[ArchetypeWidget(archetype=arcane)
+                          for arcane in Archetype.arcanes()]
+                )
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
                 controls=[
                     self.element_row,
+                    self.arcane_row,
                     ])
 
     def update_etat(self, etat: Etat):
         for element_widget in self.element_row.controls:
+            element_widget.update_etat(etat)
+        for element_widget in self.arcane_row.controls:
             element_widget.update_etat(etat)
         super().update()
 
