@@ -55,22 +55,21 @@ class Controle:
         self.etat = EtatMemorisable.initial()
         self.vue = Vue()
         self.vue.post_init(page, self.demande)
-        self.vue.update(self.etat.etat_visible)
+        self.vue.update(self.etat.etat_visible, undoable=False)
 
     def demande(self, commande: Commande, argument: int | None = None):
         match commande:
             case Commande.DECIDER_TRAIT:
-                self.gerer_choix(argument)
+                self._prev_buffer.append(self.etat)
+                if self._next_buffer:
+                    self._next_buffer = list()
+                self.etat = self.etat.appliquer_choix(argument)
             case Commande.UNDO:
-                ...
+                self._next_buffer.append(self.etat)
+                self.etat = self._prev_buffer.pop()
             case Commande.REDO:
-                ...
-
-    def gerer_choix(self, choix: int):
-        """Gérer un choix demandé par la vue."""
-        self._prev_buffer.append(self.etat)
-        if self._next_buffer:
-            self._next_buffer = list()
-        self.etat = self.etat.appliquer_choix(choix)
-        self.vue.update(self.etat.etat_visible)
-
+                self._prev_buffer.append(self.etat)
+                self.etat = self._next_buffer.pop()
+        self.vue.update(self.etat.etat_visible,
+                        undoable=bool(self._prev_buffer),
+                        redoable=bool(self._next_buffer))

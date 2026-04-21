@@ -97,17 +97,20 @@ class VueUndoRedo(Frame, Demandeur):
         self.commandes = ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 )
-        self.commandes.controls = [
-            ft.Button(content="<-", on_click=lambda _:
-                      self.demander(Commande.UNDO)),
-            ft.Button(content="->", on_click=lambda _:
-                      self.demander(Commande.REDO)),
-            ]
+        self.undo_button = ft.Button(content="<-", on_click=
+                                     lambda _: self.demander(Commande.UNDO))
+        self.redo_button = ft.Button(content="->", on_click=
+                                     lambda _: self.demander(Commande.REDO))
+        self.commandes.controls = [self.undo_button, self.redo_button]
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
                 controls=[
                     self.commandes,
                     ])
+
+    def update_state(self, undoable: bool, redoable: bool):
+        self.undo_button.disabled = not undoable
+        self.redo_button.disabled = not redoable
 
 
 @ft.control
@@ -164,24 +167,30 @@ class Vue(ft.Container):
 
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
-                controls=[self.dialogue, self.archetypes, self.undo_redo]
                 )
+
+    def add_all_content(self):
+        self.content.controls = [self.dialogue, self.archetypes, self.undo_redo]
 
     def post_init(self,
                   page: ft.Page,
                   demande: Callable[[Commande, str | None], None]):
+        self.add_all_content()
+        page.add(self)
         for widget in (self.dialogue, self.undo_redo):
             widget.post_init(demande)
         page.title = "Faites votre choix..."
         page.theme_mode = ft.ThemeMode.DARK
         page.vertical_alignment = ft.MainAxisAlignment.CENTER
         page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-        page.add(self)
-        page.update()
 
-    def update(self, etat: Etat):
+    def update(self, etat: Etat,
+               undoable: bool = True, redoable: bool = False):
+        self.undo_redo.update_state(undoable, redoable)
         if etat.decision is None:
-            self.content.controls = [self.archetypes]
+            self.content.controls = [self.archetypes, self.undo_redo]
+        else:
+            self.add_all_content()
         for widget in (self.dialogue, self.archetypes):
             widget.update_etat(etat)
         super().update()
