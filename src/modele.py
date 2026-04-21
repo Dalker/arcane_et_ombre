@@ -9,32 +9,54 @@ Ce module exporte les Modele, Etat, Archetype, Element et la fonction oppose.
  Toutes les classes définies dans ce module ont des instances immuables.
 """
 from __future__ import annotations
-from enum import Enum, auto
+from enum import StrEnum
 from dataclasses import dataclass, field
 from typing import NamedTuple
 
 
-class Element(Enum):
-    FEU = auto()
-    AIR = auto()
-    TERRE = auto()
-    EAU = auto()
+class Element(StrEnum):
+    FEU = "feu"
+    AIR = "air"
+    TERRE = "terre"
+    EAU = "eau"
 
 
 class Archetype(NamedTuple):
     """Un aspect de personalité déterminé par une ou plusieurs traits."""
-    nom: str
     traits: str
-    element: Element
+    nom: str
+
+    ELEMENTS = {
+            "NT": Element.FEU,
+            "NF": Element.AIR,
+            "ST": Element.TERRE,
+            "SF": Element.EAU,
+            }
+
+    ARCANES = {
+            "ENTJ": "Fou",
+            "INTJ": "Roue",
+            "ISTJ": "Lune",
+            }
+
+    @property
+    def element(self) -> Element:
+        """Retourner l'élément correspondant aux traits."""
+        for element in self.ELEMENTS:
+            if len(set(element).intersection(self.traits)) == 2:
+                return self.ELEMENTS[element]
+        raise ValueError(
+                "Un élément nécessite une perception et un jugement")
 
     @classmethod
     def elements(cls) -> tuple[Archetype, ...]:
-        return (
-            cls("Feu", "NT", Element.FEU),
-            cls("Air", "NF", Element.AIR),
-            cls("Terre", "ST", Element.TERRE),
-            cls("Eau", "SF", Element.EAU),
-            )
+        return tuple(cls(traits, nom=element.value)
+                     for traits, element in cls.ELEMENTS.items())
+
+    @classmethod
+    def arcanes(cls) -> tuple[Archetype, ...]:
+        return tuple(cls(traits, nom)
+                     for traits, nom in cls.ARCANES.items())
 
 
 class Decision(NamedTuple):
