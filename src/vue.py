@@ -7,7 +7,9 @@ Ce module exporte la classe Vue, dont les méthodes publiques sont:
     - vue.update(etat: Etat)
 """
 from __future__ import annotations
+from dataclasses import dataclass, field
 from typing import Callable
+from itertools import groupby
 from enum import Enum, auto
 import flet as ft
 from modele import Etat, Element, Archetype
@@ -50,36 +52,34 @@ class Demandeur:
         self.demander = demander
 
 
+@ft.control
 class Frame(ft.Container):
     """Partie visuellement distincte de la Vue."""
 
-    def init(self):
-        self.alignment = ft.Alignment.CENTER
-        self.bgcolor = ft.Colors.BLACK
-        self.border_radius = ft.BorderRadius.all(20)
-        self.padding = 20
+    alignment: ft.Alignment = field(default_factory=lambda:
+                                    ft.Alignment.CENTER)
+    bgcolor: ft.Colors = ft.Colors.BLACK
+    border_radius: ft.BorderRadius = field(default_factory=lambda:
+                                           ft.BorderRadius.all(20))
+    padding: int = 20
 
 
-@ft.control
+@dataclass
 class VueDialogue(Frame, Demandeur):
     """Partie de la Vue pour les questions / réponses et texte de fin."""
+    question: ft.Text = field(default_factory=lambda:
+                              ft.Text(color=ft.Colors.WHITE))
+    reponses: ft.Row = field(default_factory=lambda:
+                             ft.Row(alignment=ft.MainAxisAlignment.CENTER))
+    content: ft.Column = field(default_factory=lambda: ft.Column(
+            horizontal_alignment=ft.MainAxisAlignment.CENTER))
 
     def init(self):
-        super().init()
-        self.question = ft.Text(color=ft.Colors.WHITE)
-        self.reponses = ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                )
+        self.content.controls = [self.question, self.reponses]
         for n in range(2):
             self.reponses.controls.append(
                 ft.Button(content="", on_click=lambda _, choix=n:
                           self.demander(Commande.DECIDER_TRAIT, choix)))
-        self.content = ft.Column(
-                horizontal_alignment=ft.MainAxisAlignment.CENTER,
-                controls=[
-                    self.question,
-                    self.reponses,
-                    ])
 
     def update_etat(self, etat: Etat):
         self.question.value = etat.question
@@ -88,12 +88,11 @@ class VueDialogue(Frame, Demandeur):
         super().update()
 
 
-@ft.control
+@dataclass
 class VueUndoRedo(Frame, Demandeur):
     """Conteneur de boutons undo / reset / redo."""
 
     def init(self):
-        super().init()
         self.commandes = ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 )
@@ -113,7 +112,7 @@ class VueUndoRedo(Frame, Demandeur):
         self.redo_button.disabled = not redoable
 
 
-@ft.control
+@dataclass
 class VueArchetypes(Frame):
     """Partie de la Vue pour les archétypes."""
 
@@ -126,13 +125,20 @@ class VueArchetypes(Frame):
                 controls=[ArchetypeWidget(archetype=element)
                           for element in Archetype.elements()]
                 )
+        arcanes_by_element = groupby(Archetype.arcanes(),
+                                     key=lambda a: a.element)
+        arcane_columns = [
+                ft.Column(controls=[ArchetypeWidget(archetype=arcane)
+                                    for arcane in group])
+                for _, group in arcanes_by_element
+                ]
+        print(arcane_columns)
         self.arcane_row = ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 tight=True,
                 wrap=True,
                 spacing=20,
-                controls=[ArchetypeWidget(archetype=arcane)
-                          for arcane in Archetype.arcanes()]
+                controls=arcane_columns
                 )
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
@@ -144,8 +150,9 @@ class VueArchetypes(Frame):
     def update_etat(self, etat: Etat):
         for element_widget in self.element_row.controls:
             element_widget.update_etat(etat)
-        for element_widget in self.arcane_row.controls:
-            element_widget.update_etat(etat)
+        for column in self.arcane_row.controls:
+            for element_widget in column.controls:
+                element_widget.update_etat(etat)
         super().update()
 
 
@@ -153,13 +160,14 @@ class VueArchetypes(Frame):
 class Vue(ft.Container):
     callback_gauche: Callable | None = None
     callback_droite: Callable | None = None
+    width: int = 450
+    padding: int = 20
+    alignment: ft.Alignment = field(default_factory=lambda: ft.Alignment.CENTER)
+    bgcolor: ft.Colors = field(default_factory=lambda: ft.Colors.GREY_800)
+    border_radius: ft.BorderRadius = field(default_factory=lambda:
+                                           ft.BorderRadius.all(20))
 
     def init(self):
-        self.width = 450
-        self.alignment = ft.Alignment.CENTER
-        self.bgcolor = ft.Colors.GREY_800
-        self.border_radius = ft.BorderRadius.all(20)
-        self.padding = 20
 
         self.dialogue = VueDialogue()
         self.archetypes = VueArchetypes()
