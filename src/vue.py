@@ -24,6 +24,7 @@ class Commande(Enum):
 class ArchetypeWidget(ft.Text):
     """Vue d'un Archetype."""
     archetype: Archetype
+    inverted: bool = False
 
     COULEUR = {
         Element.FEU: ft.Colors.RED,
@@ -32,15 +33,21 @@ class ArchetypeWidget(ft.Text):
         Element.EAU: ft.Colors.BLUE,
     }
 
-    def __init__(self, archetype: Archetype):
+    def __init__(self, archetype: Archetype, inverted: bool = False):
         super().__init__()
         self.archetype = archetype
+        self.inverted = inverted
         self.value = self.archetype.nom
 
     def update_etat(self, etat: Etat):
         if etat.compatible(self.archetype):
-            self.color = self.COULEUR[self.archetype.element]
+            if self.inverted:
+                self.bgcolor = self.COULEUR[self.archetype.element]
+            else:
+                self.color = self.COULEUR[self.archetype.element]
         else:
+            if self.inverted:
+                self.bgcolor = ft.Colors.BLACK
             self.color = "#333333"
 
 
@@ -118,21 +125,16 @@ class VueArchetypes(Frame):
 
     def init(self):
         super().init()
-        self.element_row = ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                tight=True,
-                spacing=20,
-                controls=[ArchetypeWidget(archetype=element)
-                          for element in Archetype.elements()]
-                )
         arcanes_by_element = groupby(Archetype.arcanes(),
                                      key=lambda a: a.element)
+        element = Archetype.elements().__iter__()
         arcane_columns = [
-                ft.Column(controls=[ArchetypeWidget(archetype=arcane)
-                                    for arcane in group])
+                ft.Column(controls=[ArchetypeWidget(archetype=next(element),
+                                                    inverted=True)]
+                          + [ArchetypeWidget(archetype=arcane)
+                             for arcane in group])
                 for _, group in arcanes_by_element
                 ]
-        print(arcane_columns)
         self.arcane_row = ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 tight=True,
@@ -143,16 +145,13 @@ class VueArchetypes(Frame):
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
                 controls=[
-                    self.element_row,
                     self.arcane_row,
                     ])
 
     def update_etat(self, etat: Etat):
-        for element_widget in self.element_row.controls:
-            element_widget.update_etat(etat)
         for column in self.arcane_row.controls:
-            for element_widget in column.controls:
-                element_widget.update_etat(etat)
+            for widget in column.controls:
+                widget.update_etat(etat)
         super().update()
 
 
