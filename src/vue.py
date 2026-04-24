@@ -150,11 +150,16 @@ class VueArchetypes(Frame):
                 controls=[
                     self.arcane_row,
                     ])
+        self.resultat = ft.Text(value="TO BE IMPLEMENTED")
 
     def update_etat(self, etat: Etat):
-        for column in self.arcane_row.controls:
-            for widget in column.controls:
-                widget.update_etat(etat)
+        if etat.arcane_ou_ombre is not None:
+            self.content = self.resultat
+        else:
+            self.content = self.arcane_row
+            for column in self.arcane_row.controls:
+                for widget in column.controls:
+                    widget.update_etat(etat)
         super().update()
 
 
@@ -197,10 +202,6 @@ class Vue(ft.Container):
     def update(self, etat: Etat,
                undoable: bool = True, redoable: bool = False):
         self.undo_redo.update_state(undoable, redoable)
-        if etat.decision is None:
-            self.content.controls = [self.archetypes, self.undo_redo]
-        else:
-            self.add_all_content()
         for widget in (self.dialogue, self.archetypes):
             widget.update_etat(etat)
         super().update()

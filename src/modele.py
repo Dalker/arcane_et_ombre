@@ -21,6 +21,11 @@ class Element(StrEnum):
     EAU = "eau"
 
 
+class CarteVisible(StrEnum):
+    ARCANE = "arcane"
+    OMBRE = "ombre"
+
+
 class Archetype(NamedTuple):
     """Un aspect de personalité déterminé par une ou plusieurs traits."""
     traits: str
@@ -102,6 +107,11 @@ class Decision(NamedTuple):
                  reponses=("introvertie", "extravertie"),
                  resultats=("I", "E"),
                  ),
+            Decision(
+                 question="Découvrir l'Arcane ou l'Ombre?",
+                 reponses=("Arcane", "Ombre"),
+                 resultats=(CarteVisible.ARCANE, CarteVisible.OMBRE),
+                 ),
         )
 
 
@@ -141,8 +151,9 @@ class Traits:
 @dataclass(frozen=True)
 class Etat:
     """État du modèle à un moment donné, accessible par la Vue."""
-    decision: Decision | None
     traits: Traits = field(default_factory=Traits)
+    decision: Decision | None = None
+    arcane_ou_ombre: int | None = None
 
     @property
     def question(self):

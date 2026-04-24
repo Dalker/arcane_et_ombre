@@ -16,30 +16,37 @@ from vue import Vue, Commande
 @dataclass
 class EtatMemorisable:
     """État actuel, passé ou présent récupérable par undo/redo."""
-    decisions_restantes: tuple[Decision, ...]
     etat_visible: Etat
+    decisions_restantes: tuple[Decision, ...] = ()
 
     @classmethod
     def initial(cls) -> EtatMemorisable:
         """Fournir le premier état correctement rempli."""
         decisions = Decision.sequence()
-        return EtatMemorisable(decisions[1:], Etat(decision=decisions[0]))
+        return EtatMemorisable(
+                decisions_restantes=decisions[1:],
+                etat_visible=Etat(
+                    decision=decisions[0],
+                    ))
 
-    def appliquer_choix(self, choix: int) -> EtatMemorisable:
+    def appliquer_choix(self, n_choix: int) -> EtatMemorisable:
         """Appliquer la réponse à la question actuelle."""
-        if self.etat_visible.decision is None:
-            return self
-        nouveau_trait = self.etat_visible.decision.resultats[choix]
-        nouvel_etat = Etat(
-                traits=self.etat_visible.traits + nouveau_trait,
+        choix = self.etat_visible.decision.resultats[n_choix]
+        if not self.decisions_restantes:
+            return EtatMemorisable(
+                    etat_visible=Etat(
+                        traits=self.etat_visible.traits,
+                        decision=self.etat_visible.decision,
+                        arcane_ou_ombre=choix,
+                        ))
+        return EtatMemorisable(
+            decisions_restantes=self.decisions_restantes[1:],
+            etat_visible=Etat(
+                traits=self.etat_visible.traits + choix,
                 decision=(self.decisions_restantes[0]
                           if self.decisions_restantes
-                          else None)
-                )
-        return EtatMemorisable(
-                decisions_restantes=self.decisions_restantes[1:],
-                etat_visible=nouvel_etat,
-                )
+                          else None),
+                ))
 
 
 class Controle:
