@@ -145,15 +145,14 @@ class VueArchetypes(Frame):
                 spacing=20,
                 controls=arcane_columns
                 )
-        self.content = ft.Column(
-                horizontal_alignment=ft.MainAxisAlignment.CENTER,
-                controls=[
-                    self.arcane_row,
-                    ])
         self.resultat = ft.Text(value="TO BE IMPLEMENTED")
 
     def update_etat(self, etat: Etat):
         if etat.arcane_ou_ombre is not None:
+            for archetype in Archetype.arcanes():
+                if etat.compatible(archetype):
+                    self.resultat.value = archetype.nom
+                    break
             self.content = self.resultat
         else:
             self.content = self.arcane_row
