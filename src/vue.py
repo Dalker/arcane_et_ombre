@@ -27,10 +27,10 @@ class ArchetypeWidget(ft.Text):
     inverted: bool = False
 
     COULEUR = {
-        Element.FEU: ft.Colors.RED,
-        Element.AIR: ft.Colors.GREEN,
-        Element.TERRE: ft.Colors.BROWN,
-        Element.EAU: ft.Colors.BLUE,
+        Element.FEU: "#b02408",  # ft.Colors.RED,
+        Element.AIR: "#4e84b8",  # ft.Colors.GREEN,
+        Element.TERRE: "#8d715c",  # ft.Colors.BROWN,
+        Element.EAU: "#017a87",  # ft.Colors.BLUE,
     }
 
     def __init__(self, archetype: Archetype, inverted: bool = False):
@@ -41,11 +41,14 @@ class ArchetypeWidget(ft.Text):
 
     def update_etat(self, etat: Etat):
         if etat.compatible(self.archetype):
+            self.disabled = False
             if self.inverted:
+                self.color = ft.Colors.BLACK
                 self.bgcolor = self.COULEUR[self.archetype.element]
             else:
                 self.color = self.COULEUR[self.archetype.element]
         else:
+            self.disabled = True
             if self.inverted:
                 self.bgcolor = ft.Colors.BLACK
             self.color = "#333333"
