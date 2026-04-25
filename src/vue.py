@@ -12,7 +12,7 @@ from typing import Callable
 from itertools import groupby
 from enum import Enum, auto
 import flet as ft
-from modele import Etat, Element, Archetype
+from modele import Etat, Element, Archetype, CarteVisible
 
 
 class Commande(Enum):
@@ -145,15 +145,20 @@ class VueArchetypes(Frame):
                 spacing=20,
                 controls=arcane_columns
                 )
-        self.resultat = ft.Text(value="TO BE IMPLEMENTED")
 
     def update_etat(self, etat: Etat):
-        if etat.arcane_ou_ombre is not None:
+        if etat.arcane_ou_ombre is CarteVisible.ARCANE:
             for archetype in Archetype.arcanes():
                 if etat.compatible(archetype):
-                    self.resultat.value = archetype.nom
                     break
-            self.content = self.resultat
+            self.content = ft.Image(src="assets/arcane_{}.png".format(
+                archetype.nom.lower()).replace("é", "e"))
+        elif etat.arcane_ou_ombre is CarteVisible.OMBRE:
+            for archetype in Archetype.arcanes():
+                if etat.compatible(archetype):
+                    break
+            self.content = ft.Image(src="assets/ombre_{}.png".format(
+                archetype.nom.lower()).replace("é", "e"))
         else:
             self.content = self.arcane_row
             for column in self.arcane_row.controls:
