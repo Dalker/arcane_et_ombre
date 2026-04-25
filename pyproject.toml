@@ -5,7 +5,7 @@ description = ""
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
-    { name = "Flet developer", email = "you@example.com" }
+    { name = "Daniel Kessler (Dalker)", email = "dalker+dev@neveroptimal.org" }
 ]
 dependencies = [
     "flet>=0.84.0"
@@ -20,10 +20,9 @@ dev = [
 
 [tool.flet]
 desktop_flavor = "light"    # Change to "full" to use flet-audio and flet-video
-org = "com.mycompany"
+org = "org.neveroptimal"
 product = "flet2web"
-company = "Flet"
-copyright = "Copyright (C) 2023-2026 by Flet"
+copyright = "Copyright (C) 2026 by Dalker"
 
 [tool.flet.app]
 path = "src"

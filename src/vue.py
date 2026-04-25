@@ -152,7 +152,9 @@ class VueArchetypes(Frame):
                 if etat.compatible(archetype):
                     break
             self.content = ft.Image(src="arcane_{}.png".format(
-                archetype.nom.lower()).replace("é", "e"))
+                archetype.nom.lower()).replace("é", "e"),
+                                    width=198, height=340,
+                                    semantics_label=archetype.nom)
         elif etat.arcane_ou_ombre is CarteVisible.OMBRE:
             for archetype in Archetype.arcanes():
                 if etat.compatible(archetype):
