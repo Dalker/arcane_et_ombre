@@ -67,10 +67,13 @@ class Controle:
     def demande(self, commande: Commande, argument: int | None = None):
         match commande:
             case Commande.DECIDER_TRAIT:
+                nouvel_etat = self.etat.appliquer_choix(argument)
+                if nouvel_etat == self.etat:
+                    return
                 self._prev_buffer.append(self.etat)
+                self.etat = nouvel_etat
                 if self._next_buffer:
                     self._next_buffer = list()
-                self.etat = self.etat.appliquer_choix(argument)
             case Commande.UNDO:
                 self._next_buffer.append(self.etat)
                 self.etat = self._prev_buffer.pop()
