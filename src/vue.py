@@ -205,7 +205,10 @@ class Vue(ft.Container):
                   page: ft.Page,
                   demande: Callable[[Commande, str | None], None]):
         self.add_all_content()
-        page.add(self)
+        page.add(ft.SafeArea(
+            # expand=True,
+            content=self,
+            ))
         for widget in (self.dialogue, self.undo_redo):
             widget.post_init(demande)
         page.title = "Faites votre choix..."
