@@ -76,7 +76,7 @@ class Frame(ft.Container):
     bgcolor: ft.Colors = ft.Colors.BLACK
     border_radius: ft.BorderRadius = field(default_factory=lambda:
                                            ft.BorderRadius.all(20))
-    padding: int = 20
+    padding: int = 10
 
 
 @dataclass
@@ -111,10 +111,10 @@ class VueUndoRedo(Frame, Demandeur):
         self.commandes = ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 )
-        self.undo_button = ft.Button(content="<-", on_click=
-                                     lambda _: self.demander(Commande.UNDO))
-        self.redo_button = ft.Button(content="->", on_click=
-                                     lambda _: self.demander(Commande.REDO))
+        self.undo_button = ft.Button(content="<-", on_click=lambda _:
+                                     self.demander(Commande.UNDO))
+        self.redo_button = ft.Button(content="->", on_click=lambda _:
+                                     self.demander(Commande.REDO))
         self.commandes.controls = [self.undo_button, self.redo_button]
         self.content = ft.Column(
                 horizontal_alignment=ft.MainAxisAlignment.CENTER,
@@ -179,7 +179,8 @@ class Vue(ft.Container):
     callback_droite: Callable | None = None
     width: int = 450
     padding: int = 10
-    alignment: ft.Alignment = field(default_factory=lambda: ft.Alignment.CENTER)
+    alignment: ft.Alignment = field(default_factory=lambda:
+                                    ft.Alignment.CENTER)
     bgcolor: ft.Colors = field(default_factory=lambda: ft.Colors.GREY_800)
     border_radius: ft.BorderRadius = field(default_factory=lambda:
                                            ft.BorderRadius.all(20))
@@ -195,7 +196,10 @@ class Vue(ft.Container):
                 )
 
     def add_all_content(self):
-        self.content.controls = [self.dialogue, self.archetypes, self.undo_redo]
+        self.content.controls = [
+                self.dialogue,
+                self.archetypes,
+                self.undo_redo]
 
     def post_init(self,
                   page: ft.Page,

@@ -5,7 +5,7 @@ Ce module exporte les Modele, Etat, Archetype, Element et la fonction oppose.
  - Element: Enum des éléments FEU, AIR, TERRE, EAU
  - Archetype(nom: str, traits: str, element: Element)
  - Etat(traits: tuple[str], n_question: int)
- 
+
  Toutes les classes définies dans ce module ont des instances immuables.
 """
 from __future__ import annotations
@@ -88,7 +88,8 @@ class Decision(NamedTuple):
         """Retourner la séquence des décisions à prendre, dans l'ordre."""
         return (
             Decision(
-                 question="Vous percevez les éléments autour de vous plutôt...",
+                 question=
+                 "Vous percevez les éléments autour de vous plutôt...",
                  reponses=("avec vos sens", "avec votre intuition"),
                  resultats=("S", "N"),
                  ),
