@@ -37,7 +37,12 @@ class ArchetypeWidget(ft.Text):
         super().__init__()
         self.archetype = archetype
         self.inverted = inverted
-        self.value = self.archetype.nom
+        if self.inverted:
+            self.size = 17
+            self.weight = ft.FontWeight.BOLD
+            self.value = f"< {self.archetype.nom} >"
+        else:
+            self.value = self.archetype.nom
 
     def update_etat(self, etat: Etat):
         if etat.compatible(self.archetype):
@@ -173,7 +178,7 @@ class Vue(ft.Container):
     callback_gauche: Callable | None = None
     callback_droite: Callable | None = None
     width: int = 450
-    padding: int = 20
+    padding: int = 10
     alignment: ft.Alignment = field(default_factory=lambda: ft.Alignment.CENTER)
     bgcolor: ft.Colors = field(default_factory=lambda: ft.Colors.GREY_800)
     border_radius: ft.BorderRadius = field(default_factory=lambda:
